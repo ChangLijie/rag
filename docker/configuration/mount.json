@@ -1,0 +1,6 @@
+{
+    "dataset":"./dataset",
+    "pretrain_model":"./pretrain_model",
+    "save":"./save_model",
+    "sample_request_config":"./sample_request_config"
+}
