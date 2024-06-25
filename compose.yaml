@@ -1,0 +1,45 @@
+name: inno_rag
+
+networks:
+  default:
+    name: rag
+    driver: bridge
+
+services:
+
+  core:
+    image: innodiskorg/rag:v1.0 
+    build: ./docker
+    container_name: rag_v1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${ROOT}:/workspace/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    command: "bash -c"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    ipc: host
+    runtime: nvidia
+
+  postgres:
+    image: ankane/pgvector
+    container_name: pgvector
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env
+    volumes:
+      - ./database/postgres/:${PGDATA}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    command: "-c max_connections=200 -p ${POSTGRES_PORT}"
