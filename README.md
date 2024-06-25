@@ -1,2 +1,5 @@
-# rag
-* The sample flow to do RAG. 
+
+## Usage
+```bash
+docker compose run --rm --service-ports core bash
+```
