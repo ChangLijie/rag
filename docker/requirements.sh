@@ -11,6 +11,8 @@ pip install -q --disable-pip-version-check "sentence-transformers>=2.2.0"
 pip install -q --disable-pip-version-check "huggingface_hub>=0.22.0"
 pip install -q --disable-pip-version-check markdown-it-py mdit_plain pypdf
 pip install -q --disable-pip-version-check gdown
+pip install -q --disable-pip-version-check pgvector-haystack
+
 # Remove Caches
 rm -rf /var/lib/apt/lists/*
 apt-get clean
