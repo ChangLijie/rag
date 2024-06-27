@@ -7,10 +7,8 @@ pip3 install -q --disable-pip-version-check colorlog==6.8.2
 pip install -q --disable-pip-version-check haystack-ai
 pip install -q --disable-pip-version-check "datasets>=2.6.1"
 pip install -q --disable-pip-version-check "sentence-transformers>=2.2.0"
-
 pip install -q --disable-pip-version-check "huggingface_hub>=0.22.0"
 pip install -q --disable-pip-version-check markdown-it-py mdit_plain pypdf
-pip install -q --disable-pip-version-check gdown
 pip install -q --disable-pip-version-check pgvector-haystack
 
 # Remove Caches
