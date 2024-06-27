@@ -1,39 +1,29 @@
 import os
-from getpass import getpass
 from pathlib import Path
 
-from datasets import load_dataset
-from haystack import Document, Pipeline
-from haystack.components.builders import PromptBuilder
-from haystack.components.converters import (
-    MarkdownToDocument,
-    PyPDFToDocument,
-    TextFileToDocument,
-)
-from haystack.components.embedders import (
-    SentenceTransformersDocumentEmbedder,
-    SentenceTransformersTextEmbedder,
-)
-from haystack.components.generators import HuggingFaceAPIGenerator, OpenAIGenerator
+from haystack import Pipeline
+from haystack.components.converters import PyPDFToDocument, TextFileToDocument
+from haystack.components.embedders import SentenceTransformersDocumentEmbedder
 from haystack.components.joiners import DocumentJoiner
 from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter
-from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
 from haystack.components.routers import FileTypeRouter
 from haystack.components.writers import DocumentWriter
-from haystack.document_stores.in_memory import InMemoryDocumentStore
-from haystack.telemetry import tutorial_running
-
-from config import HUGGING_FACE_TOKEN
+from haystack_integrations.document_stores.pgvector import PgvectorDocumentStore
 
 # tutorial_running(27)
-
+os.environ["PG_CONN_STR"] = "postgresql://admin:admin@postgres:5432/postgres"
 # ---------------------pre work----------------------------------
 # Initializing the DocumentStore
-document_store = InMemoryDocumentStore()
+document_store = PgvectorDocumentStore(
+    embedding_dimension=384,
+    vector_function="cosine_similarity",
+    recreate_table=True,
+    search_strategy="hnsw",
+)
 
 # Fetch the Data
-doc_dir = "data/innodisk"
-
+doc_dir = "data/new_data/"
+# pdf_handler(dir=doc_dir)
 file_type_router = FileTypeRouter(mime_types=["text/plain", "application/pdf"])
 text_file_converter = TextFileToDocument()
 pdf_converter = PyPDFToDocument()
@@ -44,6 +34,7 @@ document_splitter = DocumentSplitter(
     split_by="word", split_length=150, split_overlap=50
 )
 
+e_model_path = ""
 # Initalize a Document Embedder
 document_embedder = SentenceTransformersDocumentEmbedder(
     model="sentence-transformers/all-MiniLM-L6-v2"
@@ -85,64 +76,6 @@ preprocessing_pipeline.connect("document_joiner", "document_cleaner")
 preprocessing_pipeline.connect("document_cleaner", "document_splitter")
 preprocessing_pipeline.connect("document_splitter", "document_embedder")
 preprocessing_pipeline.connect("document_embedder", "document_writer")
-
-
 preprocessing_pipeline.run(
     {"file_type_router": {"sources": list(Path(doc_dir).glob("**/*"))}}
 )
-
-# ---------------------RAG---------------------------------
-
-# Define a Template Prompt
-template = """
-Answer the questions based on the given context.
-
-Context:
-{% for document in documents %}
-    {{ document.content }}
-{% endfor %}
-
-Question: {{ question }}
-Answer:
-"""
-
-# Initialize a Generator
-
-if "HF_API_TOKEN" not in os.environ:
-    os.environ["HF_API_TOKEN"] = HUGGING_FACE_TOKEN
-
-pipe = Pipeline()
-pipe.add_component(
-    "embedder",
-    SentenceTransformersTextEmbedder(model="sentence-transformers/all-MiniLM-L6-v2"),
-)
-pipe.add_component(
-    "retriever", InMemoryEmbeddingRetriever(document_store=document_store)
-)
-pipe.add_component("prompt_builder", PromptBuilder(template=template))
-pipe.add_component(
-    "llm",
-    HuggingFaceAPIGenerator(
-        api_type="serverless_inference_api",
-        api_params={"model": "HuggingFaceH4/zephyr-7b-beta"},
-    ),
-)
-pipe.connect("embedder.embedding", "retriever.query_embedding")
-pipe.connect("retriever", "prompt_builder.documents")
-pipe.connect("prompt_builder", "llm")
-
-while True:
-    question = input("please enter your question : ")
-    # question = (
-    #     "What is EV2U-RMR2?"
-    # )
-    if question.lower() == "exit":
-        break
-    anwser = pipe.run(
-        {
-            "embedder": {"text": question},
-            "prompt_builder": {"question": question},
-            "llm": {"generation_kwargs": {"max_new_tokens": 350}},
-        }
-    )
-    print(anwser["llm"]["replies"])
