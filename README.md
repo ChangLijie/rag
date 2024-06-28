@@ -1,5 +1,9 @@
 
 ## Usage
 ```bash
-docker compose run --rm --service-ports core bash
+#Interactive mode
+docker compose run --rm core
+
+#background mode
+docker compose up
 ```

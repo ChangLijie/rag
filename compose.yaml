@@ -20,12 +20,14 @@ services:
       - .env
     depends_on:
       - postgres
-    command: "bash -c"
+    stdin_open: true
+    tty: true
     deploy:
       resources:
         reservations:
           devices:
             - capabilities: [gpu]
+    command: bash
     ipc: host
     runtime: nvidia
 
