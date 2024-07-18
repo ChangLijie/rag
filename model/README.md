@@ -1,1 +1,0 @@
-This folder is use to save model.
