@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chat-box {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #message-form {
+            display: flex;
+            flex-direction: column;
+        }
+        #message-form input,
+        #message-form textarea {
+            margin-bottom: 10px;
+        }
+        .user-message {
+            color: blue;
+            margin-bottom: 5px;
+        }
+        .server-message {
+            color: green;
+            margin-bottom: 5px;
+        }
+        .user-image {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat System</h1>
+    <div id="chat-box"></div>
+    <form id="message-form">
+        <label for="prompt">Enter your message:</label>
+        <textarea id="prompt" name="prompt" rows="4"></textarea>
+
+        <label for="file">Upload an image:</label>
+        <input type="file" id="file" name="file">
+
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        document.getElementById('message-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const chatBox = document.getElementById('chat-box');
+            const prompt = document.getElementById('prompt').value;
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+
+            const formData = new FormData();
+            if (prompt) {
+                formData.append('prompt', prompt);
+            }
+            if (file) {
+                formData.append('file', file);
+            }
+
+            // 显示用户消息
+            if (prompt) {
+                const userMessageElement = document.createElement('div');
+                userMessageElement.textContent = `User: ${prompt}`;
+                userMessageElement.className = 'user-message';
+                chatBox.appendChild(userMessageElement);
+            }
+
+            // 显示用户上传的图片
+            if (file) {
+                const userImageElement = document.createElement('img');
+                userImageElement.src = URL.createObjectURL(file);
+                userImageElement.alt = 'User Image';
+                userImageElement.className = 'user-image';
+                chatBox.appendChild(userImageElement);
+            }
+
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            const response = await fetch(`${baseUrl}/chat/`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            // 显示服务器消息
+            const responseElement = document.createElement('div');
+            responseElement.textContent = `Bot: ${result.message}`;
+            responseElement.className = 'server-message';
+            chatBox.appendChild(responseElement);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+            document.getElementById('message-form').reset();
+        });
+    </script>
+</body>
+</html>

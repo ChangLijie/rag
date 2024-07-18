@@ -43,7 +43,7 @@ services:
           devices:
             - capabilities: [gpu]
     network_mode: "host"
-    command: bash -c "python3 /workspace/app.py"
+    command: bash
     ipc: host
     runtime: nvidia
     
